@@ -47,8 +47,11 @@ function App() {
       setBackendStatus("Online");
       setDoctors(await doctorsResponse.json());
       setAppointments(await appointmentsResponse.json());
+      setMessage("");
     } catch (error) {
       setBackendStatus("Unavailable");
+      setDoctors(demoDoctors);
+      setAppointments(demoAppointments);
       setMessage("API unavailable. Showing sample data; appointment changes are disabled until it reconnects.");
       console.error(error);
     } finally {

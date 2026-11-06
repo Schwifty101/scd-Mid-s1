@@ -5,7 +5,7 @@ The frontend builds to static files. Ubuntu Nginx serves it at the server's IP a
 ## GitHub Pages deployment
 
 1. In the repository's **Settings → Pages**, select **GitHub Actions** as the deployment source.
-2. Push to `main` or run **Deploy Hospital dashboard to GitHub Pages** from the Actions tab.
+2. Push to `main` or run **Deploy Hospital dashboard to GitHub Pages** from the Actions tab with `main` selected.
 3. Open the Pages URL shown in the deployment environment.
 
 The workflow builds only the frontend and publishes its `dist/` directory. The dashboard remains viewable with sample records when the API is offline; appointment changes require the Ubuntu backend.
@@ -21,11 +21,13 @@ npm run build
 rsync -av --delete dist/ ubuntu-user@SERVER_IP:/tmp/hospital-dist/
 ```
 
-On Ubuntu, install Nginx and a supported Node.js release, then install the backend and static files:
+Use Node.js 22.12 or newer for the Vite build.
+
+On Ubuntu, install Nginx, `rsync`, and a maintained Node.js LTS release (22 or newer), then install the backend and static files:
 
 ```sh
 sudo apt update
-sudo apt install -y nginx
+sudo apt install -y nginx rsync
 sudo mkdir -p /opt/hospital/backend /var/www/hospital
 sudo cp -R Hospital-management-system/backend/. /opt/hospital/backend/
 sudo npm install --omit=dev --prefix /opt/hospital/backend
@@ -50,7 +52,7 @@ sudo systemctl enable --now nginx
 sudo systemctl reload nginx
 ```
 
-If UFW is enabled, allow HTTP traffic with `sudo ufw allow 'Nginx HTTP'`. Open `http://SERVER_IP/` in a browser. Static dashboard files continue to load if Node.js or the API is unavailable.
+If UFW is enabled, allow HTTP traffic with `sudo ufw allow 'Nginx HTTP'`. Also allow inbound TCP port 80 in the VM or cloud firewall. Open `http://SERVER_IP/` in a browser. Static dashboard files continue to load if Node.js or the API is unavailable.
 
 ## API routes and request handling
 

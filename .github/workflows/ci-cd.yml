@@ -45,8 +45,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV  # ghcr needs lowercase
       - uses: docker/build-push-action@v6
         with:
           context: Q2-cafe-system/${{ matrix.service }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/fastbite-${{ matrix.service }}:latest
+          tags: ghcr.io/${{ env.OWNER }}/fastbite-${{ matrix.service }}:latest
