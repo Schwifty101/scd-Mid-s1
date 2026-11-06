@@ -12,6 +12,7 @@ h2 { font-size: 21px; margin: 0 0 20px; color: #17364b; }
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; background: #d49b31; }
 .status.online .status-dot { background: #1ca779; }
 .status.offline { color: #a44b45; }
+.status.demo { color: #94661a; }
 .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .panel { background: white; border: 1px solid #e3ebf0; border-radius: 16px; padding: 25px; box-shadow: 0 8px 24px rgba(27, 57, 77, .045); }
 label { display: block; font-size: 13px; font-weight: 700; color: #405968; margin-bottom: 15px; }

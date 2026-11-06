@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 const api = "/api";
+const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
 const demoDoctors = [
   { id: 1, name: "Dr. Ayesha Khan", specialty: "Cardiology", available: true },
   { id: 2, name: "Dr. Hamza Ali", specialty: "Dermatology", available: true },
@@ -30,9 +31,9 @@ function App() {
     time: "",
     reason: ""
   });
-  const [backendStatus, setBackendStatus] = useState("Checking...");
+  const [backendStatus, setBackendStatus] = useState(demoMode ? "Demo mode" : "Checking...");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!demoMode);
 
   const loadData = async () => {
     try {
@@ -60,7 +61,7 @@ function App() {
   };
 
   useEffect(() => {
-    loadData();
+    if (!demoMode) loadData();
   }, []);
 
   const updateForm = (event) => {
@@ -126,8 +127,8 @@ function App() {
           <h1>Hospital Appointment Management</h1>
           <p className="subtitle">Find a specialist and request your appointment online.</p>
         </div>
-        <div className={`status ${backendStatus === "Online" ? "online" : "offline"}`}>
-          <span className="status-dot" /> API {backendStatus}
+        <div className={`status ${backendStatus === "Online" ? "online" : backendStatus === "Demo mode" ? "demo" : "offline"}`}>
+          <span className="status-dot" /> {backendStatus === "Demo mode" ? "Demo mode" : `API ${backendStatus}`}
         </div>
       </header>
 

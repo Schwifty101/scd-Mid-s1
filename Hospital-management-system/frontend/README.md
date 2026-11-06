@@ -6,7 +6,7 @@ This Vite app builds to static HTML, JavaScript, CSS, and assets. The built file
 
 The `hospital-pages.yml` workflow builds the dashboard on pushes to `main` and manual runs from `main`. In the repository's **Settings → Pages**, select **GitHub Actions** as the build and deployment source. The workflow derives the project-site path from the repository name and publishes the `dist` directory.
 
-The dashboard shows sample doctors and an appointment when its API is unavailable. Creating, changing, and removing appointments requires the separate backend service.
+The GitHub Pages build runs in demo mode with sample doctors and an appointment; it does not call the API. Creating, changing, and removing appointments requires the separate backend service. Ubuntu builds leave demo mode off and check the API through Nginx.
 
 ## Local development and static build
 

@@ -8,7 +8,7 @@ The frontend builds to static files. Ubuntu Nginx serves it at the server's IP a
 2. Push to `main` or run **Deploy Hospital dashboard to GitHub Pages** from the Actions tab with `main` selected.
 3. Open the Pages URL shown in the deployment environment.
 
-The workflow builds only the frontend and publishes its `dist/` directory. The dashboard remains viewable with sample records when the API is offline; appointment changes require the Ubuntu backend.
+The workflow builds only the frontend and publishes its `dist/` directory in demo mode, with sample records and no API requests. Use the Ubuntu server IP for appointment changes through the backend.
 
 ## Ubuntu deployment
 

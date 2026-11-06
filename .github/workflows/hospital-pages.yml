@@ -29,6 +29,7 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_DEMO_MODE: "true"
       # one Pages site per repo: Hospital at /, Q2 cafe frontend at /cafe/
       - run: mkdir dist/cafe && cp ../../Q2-cafe-system/frontend/index.html dist/cafe/
       - uses: actions/upload-pages-artifact@v5
