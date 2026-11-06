@@ -54,6 +54,10 @@ Stop and wipe data: `docker compose down -v`
 One page (`frontend/index.html`, plain HTML/JS) with a section per service: view menu and add to cart,
 customer profile / add points, inventory, place order, pay order, list orders and payments.
 
+**Live demo (GitHub Pages):** https://schwifty101.github.io/scd-Mid-s1/cafe/ - Pages has no backend, so the
+page falls back to a small in-browser mock of the services (same rules, data resets on reload).
+With `docker compose up` it uses the real services.
+
 ## API (via gateway)
 
 | Method | Route                      | Body / notes                                              |

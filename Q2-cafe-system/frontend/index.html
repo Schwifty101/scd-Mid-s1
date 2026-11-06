@@ -13,6 +13,7 @@
 </head>
 <body>
 <h1>FastBite Food Court</h1>
+<p id="mode" style="color:#a60"></p>
 
 <section><h2>Menu (menu-service)</h2>
   <button onclick="loadMenu()">Refresh</button>
@@ -49,15 +50,72 @@
 const API = '/api', $ = id => document.getElementById(id);
 let cart = {};
 
+
+// ---- in-browser mock backend (same rules as the real services; resets on reload) ----
+const db = {
+  menu: [['M-101','Zinger Burger',450,'Burgers',80],['M-102','Fries',200,'Sides',120],
+         ['M-103','Cold Drink',100,'Drinks',200],['M-104','Chai',80,'Drinks',150]]
+         .map(([itemId,name,price,category,qty]) => ({itemId,name,price,category,available:true,qty})),
+  customers: {'C-1042':{name:'Hamza Ali',email:'hamza.ali@example.com',points:150},
+              'C-1043':{name:'Ayesha Khan',email:'ayesha.khan@example.com',points:20}},
+  orders: [], payments: []
+};
+const rid = p => p + '-' + Math.random().toString(16).slice(2, 10).toUpperCase();
+const cust = id => { const c = db.customers[id];
+  return {customerId:id, name:c.name, email:c.email, loyaltyPoints:c.points, freeDrinkUnlocked:c.points >= 200}; };
+function mock(path, method, b) {
+  const [, root, id] = path.split('/');
+  if (root === 'menu') return db.menu.map(({qty, ...m}) => m);
+  if (root === 'customers') {
+    if (id === 'update-points') {
+      if (!db.customers[b.customerId]) return {error: 'Customer not found'};
+      db.customers[b.customerId].points += b.points; return cust(b.customerId);
+    }
+    return db.customers[id] ? cust(id) : {error: 'Customer not found'};
+  }
+  if (root === 'inventory') return db.menu.map(m => ({itemId:m.itemId, name:m.name, quantity:m.qty}));
+  if (root === 'orders') {
+    if (method === 'GET') return id ? db.orders.find(o => o.orderId === id) || {error: 'Order not found'} : db.orders;
+    if (!db.customers[b.customerId]) return {error: 'Customer not found'};
+    if (!b.items.length) return {error: 'Cart is empty'};
+    const lines = [];
+    for (const {itemId, quantity} of b.items) {
+      const m = db.menu.find(x => x.itemId === itemId);
+      if (!m) return {error: `Item ${itemId} is not on the menu`};
+      if (m.qty < quantity) return {error: `Insufficient stock for ${m.name}`, available: m.qty, requested: quantity};
+      lines.push({itemId, name:m.name, price:m.price, quantity});
+    }
+    lines.forEach(l => db.menu.find(x => x.itemId === l.itemId).qty -= l.quantity);
+    const total = lines.reduce((t, l) => t + l.price * l.quantity, 0), pointsEarned = Math.floor(total / 10);
+    db.customers[b.customerId].points += pointsEarned;
+    const o = {orderId: rid('ORD'), customerId: b.customerId, items: lines, total, status: 'CONFIRMED',
+               pointsEarned, loyalty: cust(b.customerId)};
+    db.orders.unshift(o); return o;
+  }
+  if (root === 'payments') {
+    if (method === 'GET') return id ? db.payments.find(p => p.orderId === id) || {error: 'No payment found'} : db.payments;
+    const o = db.orders.find(x => x.orderId === b.orderId);
+    if (!o) return {error: 'Order not found'};
+    if (o.status === 'PAID') return {error: 'Order is already paid'};
+    if (b.amount !== o.total) return {error: 'Payment amount does not match the order total', orderTotal: o.total, received: b.amount};
+    o.status = 'PAID';
+    const p = {paymentId: rid('PAY'), orderId: o.orderId, amount: b.amount, status: 'PAID'};
+    db.payments.unshift(p); return {message: 'Payment successful', ...p};
+  }
+  return {error: 'Not found'};
+}
+
 async function call(path, method = 'GET', body) {
   try {
     const r = await fetch(API + path, {
       method, headers: {'Content-Type': 'application/json'},
       body: body && JSON.stringify(body)
     });
-    return await r.json();
+    const j = await r.json();
+    return j;
   } catch (e) {
-    return {error: 'Backend not reachable. GitHub Pages is static only - run "docker compose up" to use the full app.'};
+    $('mode').textContent = 'Demo mode: no backend found, using in-browser mock data (resets on reload).';
+    return mock(path, method, body); // no backend (e.g. GitHub Pages): use in-browser demo
   }
 }
 async function show(id, path) {
