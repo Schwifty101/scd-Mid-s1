@@ -2,10 +2,27 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 const api = "/api";
+const demoDoctors = [
+  { id: 1, name: "Dr. Ayesha Khan", specialty: "Cardiology", available: true },
+  { id: 2, name: "Dr. Hamza Ali", specialty: "Dermatology", available: true },
+  { id: 3, name: "Dr. Sara Ahmed", specialty: "Pediatrics", available: false },
+  { id: 4, name: "Dr. Usman Malik", specialty: "Orthopedics", available: true }
+];
+const demoAppointments = [
+  {
+    id: 1001,
+    patientName: "Ali Raza",
+    doctorId: 1,
+    date: "2026-11-10",
+    time: "10:00",
+    reason: "Routine check-up",
+    status: "Confirmed"
+  }
+];
 
 function App() {
-  const [doctors, setDoctors] = useState([]);
-  const [appointments, setAppointments] = useState([]);
+  const [doctors, setDoctors] = useState(demoDoctors);
+  const [appointments, setAppointments] = useState(demoAppointments);
   const [form, setForm] = useState({
     patientName: "",
     doctorId: "",
@@ -32,7 +49,7 @@ function App() {
       setAppointments(await appointmentsResponse.json());
     } catch (error) {
       setBackendStatus("Unavailable");
-      setMessage("Unable to contact the hospital server. Please try again shortly.");
+      setMessage("API unavailable. Showing sample data; appointment changes are disabled until it reconnects.");
       console.error(error);
     } finally {
       setLoading(false);
@@ -49,6 +66,7 @@ function App() {
 
   const bookAppointment = async (event) => {
     event.preventDefault();
+    if (backendStatus !== "Online") return;
     setMessage("");
     try {
       const response = await fetch(`${api}/appointments`, {
@@ -67,6 +85,7 @@ function App() {
   };
 
   const changeStatus = async (id, status) => {
+    if (backendStatus !== "Online") return;
     try {
       const response = await fetch(`${api}/appointments/${id}`, {
         method: "PATCH",
@@ -82,6 +101,7 @@ function App() {
   };
 
   const removeAppointment = async (id) => {
+    if (backendStatus !== "Online") return;
     try {
       const response = await fetch(`${api}/appointments/${id}`, { method: "DELETE" });
       const data = await response.json();
@@ -163,10 +183,10 @@ function App() {
                   <td>{item.date}<br />{item.time}</td><td>{item.reason}</td>
                   <td><span className={`tag ${item.status.toLowerCase()}`}>{item.status}</span></td>
                   <td className="actions">
-                    <select aria-label={`Change status for ${item.patientName}`} value={item.status} onChange={(e) => changeStatus(item.id, e.target.value)}>
+                    <select aria-label={`Change status for ${item.patientName}`} value={item.status} onChange={(e) => changeStatus(item.id, e.target.value)} disabled={backendStatus !== "Online"}>
                       <option>Pending</option><option>Confirmed</option><option>Cancelled</option>
                     </select>
-                    <button className="remove" onClick={() => removeAppointment(item.id)}>Remove</button>
+                    <button className="remove" onClick={() => removeAppointment(item.id)} disabled={backendStatus !== "Online"}>Remove</button>
                   </td>
                 </tr>
               ))}</tbody>

@@ -1,0 +1,50 @@
+name: Deploy Hospital dashboard to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hospital-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Hospital-management-system/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: Hospital-management-system/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+      # one Pages site per repo: Hospital at /, Q2 cafe frontend at /cafe/
+      - run: mkdir dist/cafe && cp ../../Q2-cafe-system/frontend/index.html dist/cafe/
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: Hospital-management-system/frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

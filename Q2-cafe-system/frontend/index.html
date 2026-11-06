@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FastBite</title>
+<style>
+  body{font-family:sans-serif;max-width:900px;margin:20px auto;padding:0 12px}
+  section{border:1px solid #ccc;border-radius:6px;padding:10px;margin-bottom:14px}
+  h2{margin:0 0 8px;font-size:18px} input,button{padding:5px;margin:2px}
+  pre{background:#f4f4f4;padding:8px;overflow:auto;max-height:200px}
+  td,th{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}
+</style>
+</head>
+<body>
+<h1>FastBite Food Court</h1>
+
+<section><h2>Menu (menu-service)</h2>
+  <button onclick="loadMenu()">Refresh</button>
+  <table id="menu"></table>
+</section>
+
+<section><h2>Customer (customer-service)</h2>
+  <input id="cid" value="C-1042" size="8">
+  <button onclick="show('cust','/customers/'+cid.value)">Get profile</button>
+  <button onclick="addPoints()">Add 10 points</button>
+  <pre id="cust"></pre>
+</section>
+
+<section><h2>Inventory (inventory-service)</h2>
+  <button onclick="show('inv','/inventory')">Show stock</button>
+  <pre id="inv"></pre>
+</section>
+
+<section><h2>Place order (order-service)</h2>
+  <p>Cart: <span id="cart">empty</span> <button onclick="cart={};renderCart()">Clear</button></p>
+  <button onclick="placeOrder()">Place order for customer above</button>
+  <button onclick="show('orders','/orders')">List orders</button>
+  <pre id="orders"></pre>
+</section>
+
+<section><h2>Pay (payment-service)</h2>
+  <input id="oid" placeholder="ORD-XXXXXXXX"> <input id="amt" type="number" placeholder="amount">
+  <button onclick="pay()">Pay</button>
+  <button onclick="show('pays','/payments')">List payments</button>
+  <pre id="pays"></pre>
+</section>
+
+<script>
+const API = '/api', $ = id => document.getElementById(id);
+let cart = {};
+
+async function call(path, method = 'GET', body) {
+  try {
+    const r = await fetch(API + path, {
+      method, headers: {'Content-Type': 'application/json'},
+      body: body && JSON.stringify(body)
+    });
+    return await r.json();
+  } catch (e) {
+    return {error: 'Backend not reachable. GitHub Pages is static only - run "docker compose up" to use the full app.'};
+  }
+}
+async function show(id, path) {
+  $(id).textContent = JSON.stringify(await call(path), null, 2);
+}
+async function loadMenu() {
+  const items = await call('/menu');
+  if (!Array.isArray(items)) return $('menu').textContent = items.error || 'Could not load menu';
+  $('menu').innerHTML = '<tr><th>ID</th><th>Name</th><th>Price</th><th></th></tr>' +
+    items.map(i => `<tr><td>${i.itemId}</td><td>${i.name}</td><td>Rs. ${i.price}</td>
+      <td><button onclick="add('${i.itemId}')">Add</button></td></tr>`).join('');
+}
+function add(id) { cart[id] = (cart[id] || 0) + 1; renderCart(); }
+function renderCart() {
+  $('cart').textContent = Object.entries(cart).map(([k, v]) => `${k} x${v}`).join(', ') || 'empty';
+}
+async function addPoints() {
+  $('cust').textContent = JSON.stringify(
+    await call('/customers/update-points', 'POST', {customerId: cid.value, points: 10}), null, 2);
+}
+async function placeOrder() {
+  const items = Object.entries(cart).map(([itemId, quantity]) => ({itemId, quantity}));
+  const o = await call('/orders', 'POST', {customerId: cid.value, items});
+  $('orders').textContent = JSON.stringify(o, null, 2);
+  if (o.orderId) { $('oid').value = o.orderId; $('amt').value = o.total; cart = {}; renderCart(); }
+}
+async function pay() {
+  $('pays').textContent = JSON.stringify(
+    await call('/payments', 'POST', {orderId: oid.value, amount: Number(amt.value)}), null, 2);
+}
+loadMenu();
+</script>
+</body>
+</html>

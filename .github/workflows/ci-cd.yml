@@ -1,0 +1,52 @@
+name: CI/CD
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # CI: build all images, start the stack, run an end-to-end smoke test
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Q2-cafe-system
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build
+      - name: Smoke test
+        run: |
+          sleep 20
+          curl -sf localhost:3000/health
+          curl -sf localhost:3000/menu
+          curl -sf localhost:8080/api/menu
+          curl -sf localhost:8080/ | grep -q FastBite
+          curl -sf -X POST localhost:3000/orders -H 'Content-Type: application/json' \
+            -d '{"customerId":"C-1042","items":[{"itemId":"M-101","quantity":1}]}'
+      - if: failure()
+        run: docker compose logs
+      - run: docker compose down -v
+
+  # CD: push one image per service to GitHub Container Registry (main only)
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [frontend, api-gateway, menu-service, order-service, inventory-service, customer-service, payment-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: Q2-cafe-system/${{ matrix.service }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/fastbite-${{ matrix.service }}:latest

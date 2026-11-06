@@ -1,0 +1,16 @@
+[Unit]
+Description=Hospital appointment API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/hospital/backend
+Environment=NODE_ENV=production
+Environment=PORT=4001
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

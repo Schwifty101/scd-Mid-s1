@@ -1,0 +1,63 @@
+# Run everything: docker compose up --build   (gateway on http://localhost:3000)
+services:
+  mongo:
+    image: mongo:7
+    volumes: [mongo-data:/data/db]
+
+  frontend:
+    build: ./frontend
+    ports: ["${FRONTEND_PORT:-8080}:80"]
+    depends_on: [api-gateway]
+
+  api-gateway:
+    build: ./api-gateway
+    ports: ["${GATEWAY_PORT:-3000}:3000"]
+    environment:
+      MENU_SERVICE_URL: http://menu-service:3001
+      ORDER_SERVICE_URL: http://order-service:3002
+      INVENTORY_SERVICE_URL: http://inventory-service:3003
+      CUSTOMER_SERVICE_URL: http://customer-service:3004
+      PAYMENT_SERVICE_URL: http://payment-service:3005
+    depends_on: [menu-service, order-service, inventory-service, customer-service, payment-service]
+
+  menu-service:
+    build: ./menu-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/fastbite_menu
+    depends_on: [mongo]
+    restart: on-failure
+
+  inventory-service:
+    build: ./inventory-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/fastbite_inventory
+    depends_on: [mongo]
+    restart: on-failure
+
+  customer-service:
+    build: ./customer-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/fastbite_customers
+    depends_on: [mongo]
+    restart: on-failure
+
+  order-service:
+    build: ./order-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/fastbite_orders
+      MENU_SERVICE_URL: http://menu-service:3001
+      INVENTORY_SERVICE_URL: http://inventory-service:3003
+      CUSTOMER_SERVICE_URL: http://customer-service:3004
+    depends_on: [mongo]
+    restart: on-failure
+
+  payment-service:
+    build: ./payment-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/fastbite_payments
+      ORDER_SERVICE_URL: http://order-service:3002
+    depends_on: [mongo]
+    restart: on-failure
+
+volumes:
+  mongo-data:
